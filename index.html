@@ -156,7 +156,7 @@ section{padding:80px 20px;}
 .pc-price-label{font-size:.75rem;color:var(--muted);margin-bottom:2px;}
 .pc-separator{font-size:.78rem;color:var(--muted);margin:4px 0;}
 .pc-price-ars{font-size:.95rem;color:var(--text);font-weight:600;}
-.pc-installments{font-size:.78rem;color:var(--muted);margin-top:2px;}
+.pc-installments{font-size:.78rem;color:var(--muted);margin-top:4px;display:flex;flex-direction:column;gap:2px;}
 .pc-canje-hint{font-size:.82rem;color:var(--accent);font-weight:600;margin-top:6px;}
 .pc-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px;}
 .pc-btn-buy{padding:11px;border-radius:999px;background:#25d366;color:#fff;font-size:.82rem;font-weight:700;border:none;cursor:pointer;transition:opacity .15s;display:flex;align-items:center;justify-content:center;gap:5px;}
@@ -235,9 +235,58 @@ section{padding:80px 20px;}
   .trust-item{font-size:.78rem;}
 }
 @media(max-width:480px){
-  section{padding:56px 16px;}
+  /* HEADER */
+  .header-inner{padding:10px 14px;}
+  .header-logo img{height:36px;}
+  .nav-link{display:none;}
+  .nav-cta{padding:8px 14px;font-size:.82rem;}
+
+  /* HERO */
+  .hero{min-height:100svh;}
+  .hero-content{padding:48px 20px 64px;}
+  .hero-badge{font-size:.72rem;padding:5px 12px;margin-bottom:16px;}
+  .hero-title{font-size:2.4rem;letter-spacing:-.03em;margin-bottom:16px;}
+  .hero-sub{font-size:.95rem;margin-bottom:28px;}
+  .btn-primary,.btn-secondary{padding:15px 24px;font-size:.95rem;}
+
+  /* TRUST BAR */
+  .trust-inner{gap:4px;padding:10px 14px;justify-content:flex-start;}
+  .trust-item{font-size:.75rem;padding:4px 8px;}
+
+  /* SECTIONS */
+  section{padding:48px 16px;}
+  .section-title{font-size:1.6rem;}
+  .section-sub{font-size:.9rem;}
+
+  /* WIZARD */
   .wizard-wrap{padding:0;}
+  .wizard-progress{gap:0;margin-bottom:24px;}
+  .wp-label{font-size:.65rem;}
+  .wp-num{width:30px;height:30px;font-size:.78rem;}
+  .wizard-pane-title{font-size:1.1rem;}
+  .btn-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .btn-option{padding:12px 10px;font-size:.85rem;}
+  .wizard-nav{flex-wrap:wrap;gap:8px;}
+  .btn-next{padding:13px 24px;font-size:.88rem;}
+
+  /* RESULTADO */
+  .result-box{padding:24px 18px;}
+  .result-value{font-size:2.6rem;}
+  .result-model-card{flex-direction:column;align-items:flex-start;gap:10px;}
+  .rmc-right{flex-direction:row;align-items:center;justify-content:space-between;width:100%;}
+  .rmc-btn{padding:10px 16px;}
+
+  /* PRODUCTS */
   .products-grid{grid-template-columns:1fr;}
+  .filter-bar{gap:6px;}
+  .filter-btn{padding:7px 14px;font-size:.8rem;}
+  .pc-actions{grid-template-columns:1fr 1fr;}
+
+  /* CTA FINAL */
+  #cta-final{padding:64px 16px;}
+  .cta-final-title{font-size:1.8rem;}
+  .cta-final-sub{font-size:.95rem;}
+  .cta-final-btns .btn-primary,.cta-final-btns .btn-secondary{max-width:100%;}
 }
 </style>
 </head>
@@ -763,6 +812,13 @@ function selectOption(btn, gridId, varName){
   if(varName==='selectedBattery') selBattery=btn.dataset.val;
   const nextId = {selModel:'next1',selectedCondition:'next3',selectedBattery:'next4'}[varName];
   if(nextId) document.getElementById(nextId).disabled=false;
+  // Avance automático con pequeño delay visual
+  const nextStep = {selModel:2, selectedCondition:4, selectedBattery:'result'}[varName];
+  if(nextStep==='result'){
+    setTimeout(()=>showResult(), 350);
+  } else if(nextStep){
+    setTimeout(()=>goStep(nextStep), 350);
+  }
 }
 
 function goStep(n){
@@ -780,6 +836,7 @@ function goStep(n){
         this.classList.add('selected');
         selStorage=this.dataset.val;
         document.getElementById('next2').disabled=false;
+        setTimeout(()=>goStep(3), 350);
       };
       g.appendChild(b);
     });
@@ -955,7 +1012,7 @@ function renderProducts(filter){
         <div class="pc-price-usd">USD ${f.priceUSD}</div>
         <div class="pc-separator">ó</div>
         <div class="pc-price-ars">$ ${ars}</div>
-        <div class="pc-installments">3 cuotas de $ ${c3}</div>
+        <div class="pc-installments"><span>3 cuotas de $ ${c3}</span><span>6 cuotas de $ ${Math.round(f.priceUSD*USD*INT6/6).toLocaleString('es-AR')}</span></div>
         <div class="pc-actions">
           <button class="pc-btn-buy" data-wa="${waMsg}" onclick="window.open('https://wa.me/${WA}?text='+this.dataset.wa,'_blank')">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
@@ -981,7 +1038,8 @@ function updateCard(select){
   const waMsg=encodeURIComponent(`Hola! Me interesa el ${v.model} ${v.storage} (${v.details}) a USD ${v.priceUSD}. ¿Está disponible?`);
   card.querySelector('.pc-price-usd').textContent='USD '+v.priceUSD;
   card.querySelector('.pc-price-ars').textContent='$ '+ars;
-  card.querySelector('.pc-installments').textContent='3 cuotas de $ '+c3;
+  const c6u=Math.round(v.priceUSD*USD*INT6/6).toLocaleString('es-AR');
+  card.querySelector('.pc-installments').innerHTML='<span>3 cuotas de $ '+c3+'</span><span>6 cuotas de $ '+c6u+'</span>';
   card.querySelector('.pc-btn-buy').dataset.wa=waMsg;
   card.querySelector('.pc-btn-canje').dataset.model=v.model+' '+v.storage;
   card.querySelector('.pc-btn-canje').dataset.price=v.priceUSD;
