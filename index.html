@@ -237,8 +237,7 @@ section{padding:80px 20px;}
 @media(max-width:480px){
   /* HEADER */
   .header-inner{padding:10px 14px;}
-  .header-logo img{height:36px;}
-  .nav-link{display:none;}
+  .header-logo img{height:42px;}
   .nav-cta{padding:8px 14px;font-size:.82rem;}
 
   /* HERO */
@@ -853,6 +852,18 @@ function goStep(n){
   document.getElementById('cotizador').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
+
+// Orden de generaciones para filtrar modelos superiores
+const MODEL_GENERATION = {
+  "iPhone 11":1,"iPhone 11 Pro":1,"iPhone 11 Pro Max":1,
+  "iPhone 12":2,"iPhone 12 Pro":2,"iPhone 12 Pro Max":2,
+  "iPhone 13":3,"iPhone 13 Pro":3,"iPhone 13 Pro Max":3,
+  "iPhone 14":4,"iPhone 14 Plus":4,"iPhone 14 Pro":4,"iPhone 14 Pro Max":4,
+  "iPhone 15":5,"iPhone 15 Plus":5,"iPhone 15 Pro":5,"iPhone 15 Pro Max":5,
+  "iPhone 16":6,"iPhone 16 E":6,"iPhone 16 Plus":6,"iPhone 16 Pro":6,"iPhone 16 Pro Max":6,
+  "iPhone 17":7,"iPhone 17 Air":7,"iPhone 17 Pro":7,"iPhone 17 Pro Max":7,
+};
+
 function showResult(){
   const batteryPct = parseInt(selBattery);
   let baseVal = getTradeValue(selModel, selStorage, batteryPct);
@@ -867,7 +878,20 @@ function showResult(){
   // Modelos accesibles
   const container = document.getElementById('resultModels');
   container.innerHTML='';
-  const allAccessible = products.filter(p=>p.priceUSD > finalVal);
+  const tradeGen = MODEL_GENERATION[selModel] || 0;
+  const allAccessible = products.filter(p => {
+    const prodGen = MODEL_GENERATION[p.model] || 99;
+    // Excluir el modelo exacto que entrega, pero permitir upgrades de la misma generación (ej: 14 → 14 Pro)
+    if(p.model === selModel) return false;
+    // Para modelos de la misma generación, solo mostrar si es "Pro" o más premium
+    if(prodGen === tradeGen){
+      const selIsPro = selModel.includes('Pro');
+      const prodIsPro = p.model.includes('Pro');
+      if(selIsPro && !prodIsPro) return false; // no mostrar downgrade dentro de la gen
+    }
+    // Siempre mostrar generaciones superiores
+    return prodGen >= tradeGen;
+  });
   let showing = 5;
 
   function renderModelCards(){
