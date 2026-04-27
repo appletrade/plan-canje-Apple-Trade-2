@@ -664,7 +664,7 @@ section{padding:80px 20px;}
 </a>
 
 <script>
-const USD = 1440;
+const USD = 1455;
 const INT3 = 1.376;
 const INT6 = 1.484;
 const WA = "5491171645467";
@@ -921,7 +921,7 @@ function showResult(){
         </div>
         <div class="rmc-right">
           <span class="rmc-badge-price">USD ${p.priceUSD}</span>
-          <button class="rmc-btn" onclick="openModalFromResult('${p.model} ${p.storage}',${p.priceUSD},${finalVal})">Quiero este</button>
+          <button class="rmc-btn" onclick="sendCanjeWA('${p.model}','${p.storage}','${p.details}',${p.priceUSD},${finalVal})">Quiero este</button>
         </div>
       `;
       container.appendChild(div);
@@ -949,12 +949,34 @@ function showResult(){
   renderModelCards();
 
   const batLabel = {100:'100%', 95:'90-99%', 85:'81-89%', 70:'60-80%'}[batteryPct] || batteryPct+'%';
-  const msg=`Hola! Tengo un ${selModel} ${selStorage} en estado ${selCondition}, batería ${batLabel}. Me lo cotizaron en USD ${finalVal}. Quiero coordinar un canje.`;
-  document.getElementById('resultWA').href=`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`;
+  // Guardar datos del trade para usarlos en el mensaje de cada modelo sugerido
+  window._tradeData = { model: selModel, storage: selStorage, battery: batLabel, condition: selCondition, value: finalVal };
+  // Mensaje genérico del botón principal (sin modelo destino)
+  const msgGen = `Hola! Quiero canjear mi iPhone.\n📲 Entrego: ${selModel} ${selStorage} · Batería ${batLabel} (valor estimado USD ${finalVal})\n¿Me ayudás a avanzar con el canje?`;
+  document.getElementById('resultWA').href=`https://wa.me/${WA}?text=${encodeURIComponent(msgGen)}`;
 
   [1,2,3,4].forEach(i=>{document.getElementById('pane'+i).classList.remove('active'); document.getElementById('wp'+i).classList.add('done'); document.getElementById('wp'+i).classList.remove('active');});
   document.getElementById('paneResult').classList.add('active');
   document.getElementById('cotizador').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function sendCanjeWA(destModel, destStorage, destDetails, destPrice, tradeVal){
+  const td = window._tradeData || {};
+  const diff = destPrice - tradeVal;
+  const diffARS = diff * USD;
+  const c3 = Math.round(diffARS * INT3 / 3);
+  const c6 = Math.round(diffARS * INT6 / 6);
+  const fmt = n => n.toLocaleString('es-AR');
+  const msg = `Hola! Quiero canjear mi iPhone.
+📲 Entrego: ${td.model||''} ${td.storage||''} · Batería ${td.battery||''} (valor estimado USD ${tradeVal})
+✅ Quiero: ${destModel} ${destStorage} (${destDetails})
+💰 Diferencia estimada:
+- USD ${diff}
+- $ ${fmt(diffARS)}
+- 3 cuotas: $ ${fmt(c3)}
+- 6 cuotas: $ ${fmt(c6)}
+¿Me ayudás a avanzar con el canje?`;
+  window.open(`https://wa.me/${WA}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 function resetWizard(){
