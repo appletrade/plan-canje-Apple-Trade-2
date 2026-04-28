@@ -151,6 +151,7 @@ section{padding:80px 20px;}
 .pc-badge.seminuevo{background:#e8f5e9;color:#2e7d32;}
 .pc-badge.nuevo{background:#e3f2fd;color:#1565c0;}
 .pc-badge.special{background:#fff8e1;color:#f57f17;}
+.pc-badge.sellado{background:#e8f5e9;color:#2e7d32;}
 .pc-body{padding:16px 20px;}
 .pc-price-usd{font-size:1.5rem;font-weight:800;color:var(--primary);letter-spacing:-.02em;}
 .pc-price-label{font-size:.75rem;color:var(--muted);margin-bottom:2px;}
@@ -480,8 +481,13 @@ section{padding:80px 20px;}
     <p class="section-label">Catálogo</p>
     <h2 class="section-title">iPhones disponibles hoy</h2>
     <p class="section-sub" style="margin-bottom:28px;">Stock real, actualizado constantemente.</p>
-    <div class="filter-bar">
-      <button class="filter-btn active" onclick="filterProducts('all',this)">Todos</button>
+    <div class="filter-bar" style="margin-bottom:12px;">
+      <button class="filter-btn active" onclick="filterCondition('all',this)" id="fcAll">Todos</button>
+      <button class="filter-btn" onclick="filterCondition('Seminuevo',this)" id="fcSemi">Seminuevos</button>
+      <button class="filter-btn" onclick="filterCondition('Nuevo en caja sellada',this)" id="fcNuevo">📦 Sellados</button>
+    </div>
+    <div class="filter-bar" id="modelFilterBar">
+      <button class="filter-btn active" onclick="filterProducts('all',this)">Todos los modelos</button>
       <button class="filter-btn" onclick="filterProducts('11',this)">iPhone 11</button>
       <button class="filter-btn" onclick="filterProducts('13',this)">iPhone 13</button>
       <button class="filter-btn" onclick="filterProducts('14',this)">iPhone 14</button>
@@ -665,6 +671,8 @@ section{padding:80px 20px;}
 
 <script>
 const USD = 1455;
+let activeModel = 'all';
+let activeCondition = 'all';
 const INT3 = 1.376;
 const INT6 = 1.484;
 const WA = "5491171645467";
@@ -687,11 +695,15 @@ const products = [
   { model:"iPhone 14 Pro Max", storage:"128GB", condition:"Seminuevo", details:"Negro / Violeta · Batería 100%", priceUSD:585 },
   { model:"iPhone 14 Pro Max", storage:"256GB", condition:"Seminuevo", details:"Blanco · Batería 85%", priceUSD:600, badges:["Con caja original"] },
   { model:"iPhone 16", storage:"128GB", condition:"Seminuevo", details:"Rosa / Blanco / Azul · Batería 90+", priceUSD:620 },
-  { model:"iPhone 15 Pro Max", storage:"256GB", condition:"Seminuevo", details:"Azul · Batería 100%", priceUSD:695 },
   { model:"iPhone 17", storage:"256GB", condition:"Seminuevo", details:"Negro · Batería 100%", priceUSD:800, badges:["Garantía de Apple"] },
-  { model:"iPhone 16 Pro Max", storage:"256GB", condition:"Seminuevo", details:"Gris · Batería 92%", priceUSD:890 },
   { model:"iPhone 17 Pro", storage:"256GB", condition:"Seminuevo", details:"Azul · Batería 100%", priceUSD:1160, badges:["Con caja original","Garantía de Apple"] },
   { model:"iPhone 17 Pro Max", storage:"256GB", condition:"Seminuevo", details:"Azul · Batería 100%", priceUSD:1380, badges:["Con caja original","Garantía de Apple"] },
+  { model:"iPhone 17",         storage:"256GB", condition:"Nuevo en caja sellada", details:"A pedido", priceUSD:930,  badges:["1 año de garantía de Apple","A pedido con seña de $50"] },
+  { model:"iPhone 17 E",       storage:"256GB", condition:"Nuevo en caja sellada", details:"A pedido", priceUSD:720,  badges:["1 año de garantía de Apple","A pedido con seña de $50"] },
+  { model:"iPhone 17 Pro",     storage:"256GB", condition:"Nuevo en caja sellada", details:"A pedido", priceUSD:1370, badges:["1 año de garantía de Apple","A pedido con seña de $50"] },
+  { model:"iPhone 17 Pro Max", storage:"256GB", condition:"Nuevo en caja sellada", details:"A pedido", priceUSD:1500, badges:["1 año de garantía de Apple","A pedido con seña de $50"] },
+  { model:"iPhone 17 Pro Max", storage:"512GB", condition:"Nuevo en caja sellada", details:"A pedido", priceUSD:1750, badges:["1 año de garantía de Apple","A pedido con seña de $50"] },
+  { model:"iPhone 17 Pro Max", storage:"1TB",   condition:"Nuevo en caja sellada", details:"A pedido", priceUSD:1920, badges:["1 año de garantía de Apple","A pedido con seña de $50"] },
 ];
 
 // Tabla real de cotizaciones: { "Modelo GB": { rangos: [{min,max,val}] } }
@@ -1005,10 +1017,24 @@ function getColorDots(details){
   }).filter(Boolean).join(' ');
 }
 
+const BADGE_COLORS = {
+  "con caja original":           "background:#e3f2fd;color:#1565c0",
+  "garantía de apple":           "background:#dcfce7;color:#15803d",
+  "1 año de garantía de apple":  "background:#dcfce7;color:#15803d",
+  "pantalla reemplazada":        "background:#fff8e1;color:#f57f17",
+  "detalles en los bordes":      "background:#fff8e1;color:#f57f17",
+  "a pedido con seña de $50":    "background:#f3e8ff;color:#7c3aed",
+};
+
 function renderProducts(filter){
   const grid=document.getElementById('productsGrid');
   grid.innerHTML='';
-  const filtered=filter==='all'?products:products.filter(p=>p.model.includes(filter));
+  activeModel = filter;
+  const filtered = products.filter(p => {
+    const matchModel = filter === 'all' || p.model.includes(filter);
+    const matchCond  = activeCondition === 'all' || p.condition === activeCondition;
+    return matchModel && matchCond;
+  });
   if(!filtered.length){grid.innerHTML='<p style="color:var(--muted);padding:20px;">Sin equipos disponibles.</p>';return;}
 
   // Agrupar por model + condition
@@ -1023,7 +1049,10 @@ function renderProducts(filter){
     const modelName = groupKey.split('||')[0];
     const first = variants[0];
     const condBadge=`<span class="pc-badge ${first.condition==='Seminuevo'?'seminuevo':'nuevo'}">${first.condition}</span>`;
-    const badgesHTML=(first.badges||[]).map(b=>`<span class="pc-badge special">${b}</span>`).join('');
+    const badgesHTML=(first.badges||[]).map(b=>{
+      const style = BADGE_COLORS[b.toLowerCase()] || "background:#fff8e1;color:#f57f17";
+      return `<span class="pc-badge special" style="${style}">${b}</span>`;
+    }).join('');
 
     // Dropdown de variantes
     const optionsHTML = variants.map((v,i)=>{
@@ -1089,12 +1118,22 @@ function updateCard(select){
   card.querySelector('.pc-btn-canje').dataset.model=v.model+' '+v.storage;
   card.querySelector('.pc-btn-canje').dataset.price=v.priceUSD;
   // Actualizar badges
-  const badgesHTML=(v.badges||[]).map(b=>`<span class="pc-badge special">${b}</span>`).join('');
+  const badgesHTML=(v.badges||[]).map(b=>{
+    const style = BADGE_COLORS[b.toLowerCase()] || "background:#fff8e1;color:#f57f17";
+    return `<span class="pc-badge special" style="${style}">${b}</span>`;
+  }).join('');
   const condBadge=`<span class="pc-badge ${v.condition==='Seminuevo'?'seminuevo':'nuevo'}">${v.condition}</span>`;
   card.querySelector('.pc-badges').innerHTML=condBadge+badgesHTML;
 }
 
 renderProducts('all');
+
+function filterCondition(cond, btn){
+  activeCondition = cond;
+  document.querySelectorAll('#fcAll,#fcSemi,#fcNuevo').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderProducts(activeModel);
+}
 
 function filterProducts(f, btn){
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
@@ -1140,13 +1179,18 @@ function calcModal(){
   const tradeVal=parseInt(sel.value)||0;
   if(!tradeVal) return;
   const diff=Math.max(0,modalTargetPrice-tradeVal);
-  const diffARS=(diff*USD).toLocaleString('es-AR');
+  const diffARS=diff*USD;
+  const c3=Math.round(diffARS*INT3/3);
+  const c6=Math.round(diffARS*INT6/6);
+  const fmt=n=>n.toLocaleString('es-AR');
   document.getElementById('modalDiff').textContent='USD '+diff;
-  document.getElementById('modalARS').textContent='$ '+diffARS;
+  document.getElementById('modalARS').textContent='$ '+fmt(diffARS);
   document.getElementById('modalResult').classList.add('visible');
-  const msg=encodeURIComponent(`Hola! Quiero canjear mi iPhone (valor USD ${tradeVal}) por el ${document.getElementById('modalTargetModel').textContent}. La diferencia es USD ${diff}.`);
+  const tradeLabel = sel.options[sel.selectedIndex].text.split('·')[0].trim();
+  const destLabel = document.getElementById('modalTargetModel').textContent;
+  const msg=`Hola! Quiero canjear mi iPhone.\n📲 Entrego: ${tradeLabel} (valor estimado USD ${tradeVal})\n✅ Quiero: ${destLabel}\n💰 Diferencia estimada:\n- USD ${diff}\n- $ ${fmt(diffARS)}\n- 3 cuotas: $ ${fmt(c3)}\n- 6 cuotas: $ ${fmt(c6)}\n¿Me ayudás a avanzar con el canje?`;
   const waBtn=document.getElementById('modalWA');
-  waBtn.href='https://wa.me/'+WA+'?text='+msg;
+  waBtn.href='https://wa.me/'+WA+'?text='+encodeURIComponent(msg);
   waBtn.style.display='flex';
 }
 
